@@ -47,7 +47,48 @@ class ShowArticle(Resource):
             return make_response(article_json, 200)
 
         return {'message': 'Maximum pageview limit reached'}, 401
+    
 
+
+class Login(Resource):
+    def post(self):
+        # Get the username from the request body
+        user = User.query.filter(
+            User.username == request.get_json()['username']
+        ).first()
+
+        # If the user doesn't exist, return a 404 or appropriate message
+        if user is None:
+            return jsonify({'message': 'User not found'}), 404
+
+        # Store user_id in the session
+        session['user_id'] = user.id
+
+        # Return the user data as a JSON response
+        return jsonify(user.to_dict())  # Ensure this returns JSON and not HTML
+
+
+class Logout(Resource):
+    def delete(self):
+        session['user_id'] = None
+        return {'message': '204: No Contect'}, 204
+    
+
+class CheckSession(Resource):
+    def get(self):
+        user = User.query.filter(User.id == session.get('user_id')).first()
+        if user:
+            return user.to_dict()
+        else:
+            return {}, 401
+        
+
+
+
+
+api.add_resource(CheckSession, '/check_session')
+api.add_resource(Logout, '/logout')
+api.add_resource(Login, '/login')  # Updated endpoint to '/login' from '/user'
 api.add_resource(ClearSession, '/clear')
 api.add_resource(IndexArticle, '/articles')
 api.add_resource(ShowArticle, '/articles/<int:id>')
